@@ -1,0 +1,4 @@
+fromNode,toNode,Length,Diameter,Friction,SS_Constant,c
+m1,m2,20,150,0.008,0.25,1000
+m2,m3,20,150,0.008,0.25,1000
+m2,m4,20,150,0.008,0.25,1000
