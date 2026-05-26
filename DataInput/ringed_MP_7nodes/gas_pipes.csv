@@ -1,7 +1,0 @@
-UID,FROMUID,TOUID,L_km,D_mm,PressureLevel,Vmax,u,Zeta,Sound,Type
-p1,m1,m6,2,150,0,2,1,0,1000,existing
-p2,m6,m5,2,150,0,2,1,0,1000,existing
-p3,m5,m4,2,150,0,2,1,0,1000,existing
-p4,m1,m2,2,150,0,2,1,0,1000,existing
-p5,m2,m3,2,150,0,2,1,0,1000,existing
-p6,m4,m3,2,150,0,2,1,0,1000,existing
