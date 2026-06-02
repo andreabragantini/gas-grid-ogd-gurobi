@@ -1,4 +1,6 @@
-"""Canonical schema and alias definitions."""
+"""Canonical schema and alias definitions.
+This module defines the canonical column names and their aliases for each expected input table.
+"""
 
 from __future__ import annotations
 

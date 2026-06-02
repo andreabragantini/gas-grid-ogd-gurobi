@@ -1,4 +1,14 @@
-"""Resolve named formulations to concrete implementation objects."""
+"""Resolve named formulations to concrete implementation objects.
+This module defines the Formulation protocol which specifies the interface for all dispatch formulations, 
+and provides a factory function create_formulation() to return the appropriate implementation based on a string name. 
+It also includes a list_formulations() function to return the known formulation names for validation and user feedback purposes.
+Currently implemented formulations include:
+- weymouth_ogd: Quadratic formulation using the Weymouth equation for pressure drop
+- weymouth_lp_ogd: Linearized formulation using piecewise linear approximation of the Weymouth equation
+Reserved formulations (not yet implemented):
+- renouard_mp: Mixed-integer formulation using Renouard's method for compressor modeling
+- renouard_lp: Linearized formulation using Renouard's method for compressor modeling
+"""
 
 from __future__ import annotations
 

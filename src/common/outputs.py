@@ -1,4 +1,9 @@
-"""Artifact-first output handling for gas dispatch runs."""
+"""Artifact-first output handling for gas dispatch runs.
+This module defines the OutputManager class which provides a structured way to write all output artifacts (tables, KPIs, charts, metadata) to a deterministic
+directory structure under the configured output root. It ensures that all artifacts are organized by case and formulation, and generates
+a simple index.html to summarize the results and provide links to the generated files. 
+The OutputManager is used by the runner after solving to persist results in a consistent manner.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,15 @@
-"""Load and harmonize legacy or canonical gas case datasets."""
+"""Load and harmonize legacy or canonical gas case datasets.
+This module provides the `load_case` function which implements a flexible loading mechanism to read gas network data from CSV files. 
+It supports:
+  - Multiple data roots for case discovery (e.g., local data directory, shared network location)
+  - Multiple candidate filenames for each expected table (e.g., gas_nodes.csv, nodes.csv)
+  - Automatic delimiter detection (comma, semicolon, tab)
+  - Schema harmonization to convert legacy column names and mixed units into a canonical format
+  - Validation of the loaded data against expected constraints (e.g., required columns, logical consistency)
+  - Application of a load factor to scale demand values if specified
+The main function `load_case` returns a GasNetworkData object containing the harmonized tables and metadata about the loading process. 
+It raises informative exceptions if required files are missing or if validation fails.
+"""
 
 from __future__ import annotations
 
@@ -104,6 +115,7 @@ def _convert_if_needed(canonical: str, source_column: str, frame: pd.DataFrame) 
 
 
 def _harmonize_table(table_name: str, frame: pd.DataFrame) -> pd.DataFrame:
+    """Harmonize a loaded table to the canonical schema using the defined rules."""
     rules = TABLE_RULES[table_name]
     result = pd.DataFrame(index=frame.index)
 

@@ -1,4 +1,13 @@
-"""Validation helpers for harmonized gas network data."""
+"""Validation helpers for harmonized gas network data.
+This module provides functions to validate the loaded gas network data against
+the expected canonical schema and logical constraints. It checks for:
+  - Presence of required columns in each table
+  - Uniqueness of identifiers (e.g., node UIDs, pipe UIDs)
+  - Logical consistency (e.g., p_min_kpa <= p_max_kpa for nodes)
+  - Referential integrity (e.g., pipes reference existing nodes)
+  - Network connectivity (e.g., no isolated nodes or self-loops)
+The main function `validate_case_data` returns a ValidationReport summarizing any issues found, which can be used to raise a ValidationError if critical errors are present.
+"""
 
 from __future__ import annotations
 
