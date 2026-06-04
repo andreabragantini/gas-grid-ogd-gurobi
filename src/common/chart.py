@@ -9,7 +9,7 @@ import networkx as nx
 import plotly.graph_objects as go
 import plotly.io as pio
 
-from ..common.context import GasNetworkData
+from .context import GasNetworkData
 
 
 def _looks_like_swiss_coords(x_value: float | None, y_value: float | None) -> bool:

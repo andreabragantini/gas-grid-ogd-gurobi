@@ -23,10 +23,10 @@ if _env_license.exists():
 import gurobipy as gp
 
 from ..common.context import GasNetworkData
-from .chart import build_charts
+from ..common.chart import build_charts
+from ..common.results import SolveResult, extract_results
 from .constraints import build_bounds, build_mass_balance, build_quadratic_weymouth, build_supply_bounds, build_valve_constraints
 from .objective import set_objective
-from .results import SolveResult, extract_results
 from .variables import build_variables
 
 
