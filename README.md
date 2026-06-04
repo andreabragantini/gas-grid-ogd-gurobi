@@ -124,8 +124,7 @@ outputs/custom_MP_4nodes/weymouth_ogd/latest/
 ├── run_metadata.json         # Run parameters and timestamps
 ├── tables/
 │   ├── node_pressure.csv     # Node pressures (solution)
-│   ├── pipe_flow.csv         # Pipe flows
-│   ├── direction.csv         # Flow directions
+│   ├── pipe_flow.csv         # Pipe flows (includes q_plus/q_minus/direction when applicable)
 │   ├── active_supply.csv     # Supplier dispatch
 │   └── ...                   # Additional solution tables
 └── charts/
