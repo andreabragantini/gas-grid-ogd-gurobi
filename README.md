@@ -19,15 +19,34 @@ A modular Python framework for optimizing gas network dispatch using Gurobi solv
 - Gurobi 10.0+ (with license)
 - Conda environment with `gurobi` installed
 
-### Installation
+This repository is developed in a conda environment with Python 3.10.
+
+### 1. Create and activate the environment
 
 ```bash
-# Clone and navigate to repository
-cd gas-grid-ogd-gurobi
-
-# Verify environment
-python -m pytest tests/ -v
+conda create -n gurobi python=3.10
+conda activate gurobi
 ```
+
+### 2. Install Gurobi
+
+Gurobi is not installed from `requirements.txt`; install it first and configure a valid license.
+
+- Installer and license setup: https://support.gurobi.com/hc/en-us/articles/360044290292-How-do-I-install-Gurobi-Optimizer
+- Official docs: https://www.gurobi.com/documentation/
+- Downloads: https://www.gurobi.com/downloads/gurobi-software/
+
+Common install options:
+
+- `conda install -c gurobi gurobi`
+- `python -m pip install gurobipy`
+
+### 3. Install Python dependencies
+
+```bash
+python -m pip install -r requirements.txt
+```
+
 
 ---
 

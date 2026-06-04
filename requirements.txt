@@ -1,0 +1,8 @@
+# Reproducible Python dependencies for the tested conda environment.
+# Gurobi itself is installed separately; see the README for the official install options.
+gurobipy==13.0.2
+pandas==2.3.3
+tabulate==0.10.0
+plotly==6.7.0
+matplotlib==3.10.9
+networkx==3.4.2
