@@ -69,46 +69,72 @@ def _node_positions(data: GasNetworkData) -> dict[str, tuple[float, float, bool]
 
 def _node_size(node_count: int) -> int:
     if node_count > 500:
-        return 3
-    if node_count > 100:
-        return 4
-    if node_count > 20:
         return 6
+    if node_count > 100:
+        return 7
+    if node_count > 20:
+        return 8
     return 10
 
 
-def _build_network_figure(data: GasNetworkData, solution: dict[str, Any]) -> go.Figure:
-    positions = _node_positions(data)
-    pressure_lookup = {item["uid"]: item["pressure_kpa"] for item in solution["pressures"]}
+def _line_segments(dataframe, positions: dict[str, tuple[float, float, bool]]) -> tuple[list[float | None], list[float | None]]:
+    x_values: list[float | None] = []
+    y_values: list[float | None] = []
+    for row in dataframe.itertuples(index=False):
+        start = positions.get(str(row.from_node))
+        end = positions.get(str(row.to_node))
+        if start is None or end is None:
+            continue
+        x_values.extend([start[0], end[0], None])
+        y_values.extend([start[1], end[1], None])
+    return x_values, y_values
 
+
+def _map_center(positions: dict[str, tuple[float, float, bool]]) -> dict[str, float]:
+    if not positions:
+        return {"lat": 46.8, "lon": 8.3}
+    return {
+        "lat": sum(v[1] for v in positions.values()) / len(positions),
+        "lon": sum(v[0] for v in positions.values()) / len(positions),
+    }
+
+
+def _build_network_figure(data: GasNetworkData, solution: dict[str, Any], positions: dict[str, tuple[float, float, bool]]) -> go.Figure:
+    pressure_lookup = {item["uid"]: item["pressure_kpa"] for item in solution["pressures"]}
     use_geo = any(item[2] for item in positions.values())
     fig = go.Figure()
 
+    node_lons = [positions[str(row.uid)][0] for row in data.nodes.itertuples(index=False)]
+    node_lats = [positions[str(row.uid)][1] for row in data.nodes.itertuples(index=False)]
+    node_customdata = [
+        [
+            str(row.uid),
+            float(pressure_lookup.get(str(row.uid), 0.0)),
+            float(getattr(row, "q_demand_tcmh", 0.0) or 0.0),
+        ]
+        for row in data.nodes.itertuples(index=False)
+    ]
+
+    pipe_x, pipe_y = _line_segments(data.pipes, positions)
+    valve_x, valve_y = _line_segments(data.valves, positions)
+
     if use_geo:
-        for row in data.pipes.itertuples(index=False):
-            start = positions.get(str(row.from_node))
-            end = positions.get(str(row.to_node))
-            if start is None or end is None:
-                continue
+        if pipe_x:
             fig.add_trace(
                 go.Scattermapbox(
-                    lon=[start[0], end[0]],
-                    lat=[start[1], end[1]],
+                    lon=pipe_x,
+                    lat=pipe_y,
                     mode="lines",
-                    line=dict(width=1.5, color="#64748b"),
+                    line=dict(width=1.5, color="#22c55e"),
                     hoverinfo="skip",
                     showlegend=False,
                 )
             )
-        for row in data.valves.itertuples(index=False):
-            start = positions.get(str(row.from_node))
-            end = positions.get(str(row.to_node))
-            if start is None or end is None:
-                continue
+        if valve_x:
             fig.add_trace(
                 go.Scattermapbox(
-                    lon=[start[0], end[0]],
-                    lat=[start[1], end[1]],
+                    lon=valve_x,
+                    lat=valve_y,
                     mode="lines",
                     line=dict(width=1.5, color="#ef4444"),
                     hoverinfo="skip",
@@ -118,52 +144,37 @@ def _build_network_figure(data: GasNetworkData, solution: dict[str, Any]) -> go.
 
         fig.add_trace(
             go.Scattermapbox(
-                lon=[positions[str(row.uid)][0] for row in data.nodes.itertuples(index=False)],
-                lat=[positions[str(row.uid)][1] for row in data.nodes.itertuples(index=False)],
+                lon=node_lons,
+                lat=node_lats,
                 mode="markers",
                 marker=dict(size=_node_size(len(data.nodes)), color="#1f77b4"),
-                customdata=[
-                    [
-                        str(row.uid),
-                        float(pressure_lookup.get(str(row.uid), 0.0)),
-                        float(getattr(row, "q_demand_tcmh", 0.0) or 0.0),
-                    ]
-                    for row in data.nodes.itertuples(index=False)
-                ],
+                customdata=node_customdata,
                 hovertemplate="Node %{customdata[0]}<br>Pressure %{customdata[1]:.2f} kPa<br>Demand %{customdata[2]:.2f}<extra></extra>",
                 showlegend=False,
             )
         )
         fig.update_layout(
             mapbox_style="open-street-map",
-            mapbox=dict(center=dict(lat=sum(v[1] for v in positions.values()) / len(positions), lon=sum(v[0] for v in positions.values()) / len(positions)), zoom=8),
+            mapbox=dict(center=_map_center(positions), zoom=8),
             margin=dict(l=0, r=0, t=20, b=0),
         )
     else:
-        for row in data.pipes.itertuples(index=False):
-            start = positions.get(str(row.from_node))
-            end = positions.get(str(row.to_node))
-            if start is None or end is None:
-                continue
+        if pipe_x:
             fig.add_trace(
-                go.Scatter(
-                    x=[start[0], end[0]],
-                    y=[start[1], end[1]],
+                go.Scattergl(
+                    x=pipe_x,
+                    y=pipe_y,
                     mode="lines",
-                    line=dict(width=1.5, color="#64748b"),
+                    line=dict(width=1.5, color="#22c55e"),
                     hoverinfo="skip",
                     showlegend=False,
                 )
             )
-        for row in data.valves.itertuples(index=False):
-            start = positions.get(str(row.from_node))
-            end = positions.get(str(row.to_node))
-            if start is None or end is None:
-                continue
+        if valve_x:
             fig.add_trace(
-                go.Scatter(
-                    x=[start[0], end[0]],
-                    y=[start[1], end[1]],
+                go.Scattergl(
+                    x=valve_x,
+                    y=valve_y,
                     mode="lines",
                     line=dict(width=1.5, color="#ef4444"),
                     hoverinfo="skip",
@@ -172,19 +183,12 @@ def _build_network_figure(data: GasNetworkData, solution: dict[str, Any]) -> go.
             )
 
         fig.add_trace(
-            go.Scatter(
-                x=[positions[str(row.uid)][0] for row in data.nodes.itertuples(index=False)],
-                y=[positions[str(row.uid)][1] for row in data.nodes.itertuples(index=False)],
+            go.Scattergl(
+                x=node_lons,
+                y=node_lats,
                 mode="markers",
                 marker=dict(size=_node_size(len(data.nodes)), color="#1f77b4"),
-                customdata=[
-                    [
-                        str(row.uid),
-                        float(pressure_lookup.get(str(row.uid), 0.0)),
-                        float(getattr(row, "q_demand_tcmh", 0.0) or 0.0),
-                    ]
-                    for row in data.nodes.itertuples(index=False)
-                ],
+                customdata=node_customdata,
                 hovertemplate="Node %{customdata[0]}<br>Pressure %{customdata[1]:.2f} kPa<br>Demand %{customdata[2]:.2f}<extra></extra>",
                 showlegend=False,
             )
@@ -200,37 +204,39 @@ def _build_network_figure(data: GasNetworkData, solution: dict[str, Any]) -> go.
     return fig
 
 
-def _build_pressure_figure(data: GasNetworkData, solution: dict[str, Any]) -> go.Figure:
-    positions = _node_positions(data)
+def _build_pressure_figure(data: GasNetworkData, solution: dict[str, Any], positions: dict[str, tuple[float, float, bool]]) -> go.Figure:
     pressure_lookup = {item["uid"]: item["pressure_kpa"] for item in solution["pressures"]}
     use_geo = any(item[2] for item in positions.values())
     fig = go.Figure()
 
+    node_lons = [positions[str(row.uid)][0] for row in data.nodes.itertuples(index=False)]
+    node_lats = [positions[str(row.uid)][1] for row in data.nodes.itertuples(index=False)]
+    node_pressures = [pressure_lookup.get(str(row.uid), 0.0) for row in data.nodes.itertuples(index=False)]
+    node_customdata = [
+        [str(row.uid), float(pressure_lookup.get(str(row.uid), 0.0))]
+        for row in data.nodes.itertuples(index=False)
+    ]
+
+    pipe_x, pipe_y = _line_segments(data.pipes, positions)
+    valve_x, valve_y = _line_segments(data.valves, positions)
+
     if use_geo:
-        for row in data.pipes.itertuples(index=False):
-            start = positions.get(str(row.from_node))
-            end = positions.get(str(row.to_node))
-            if start is None or end is None:
-                continue
+        if pipe_x:
             fig.add_trace(
                 go.Scattermapbox(
-                    lon=[start[0], end[0]],
-                    lat=[start[1], end[1]],
+                    lon=pipe_x,
+                    lat=pipe_y,
                     mode="lines",
-                    line=dict(width=1.0, color="#cbd5e1"),
+                    line=dict(width=1.0, color="#22c55e"),
                     hoverinfo="skip",
                     showlegend=False,
                 )
             )
-        for row in data.valves.itertuples(index=False):
-            start = positions.get(str(row.from_node))
-            end = positions.get(str(row.to_node))
-            if start is None or end is None:
-                continue
+        if valve_x:
             fig.add_trace(
                 go.Scattermapbox(
-                    lon=[start[0], end[0]],
-                    lat=[start[1], end[1]],
+                    lon=valve_x,
+                    lat=valve_y,
                     mode="lines",
                     line=dict(width=1.2, color="#ef4444"),
                     hoverinfo="skip",
@@ -240,53 +246,42 @@ def _build_pressure_figure(data: GasNetworkData, solution: dict[str, Any]) -> go
 
         fig.add_trace(
             go.Scattermapbox(
-                lon=[positions[str(row.uid)][0] for row in data.nodes.itertuples(index=False)],
-                lat=[positions[str(row.uid)][1] for row in data.nodes.itertuples(index=False)],
+                lon=node_lons,
+                lat=node_lats,
                 mode="markers",
                 marker=dict(
                     size=_node_size(len(data.nodes)),
-                    color=[pressure_lookup.get(str(row.uid), 0.0) for row in data.nodes.itertuples(index=False)],
+                    color=node_pressures,
                     colorscale="Viridis",
                     colorbar=dict(title="Pressure (kPa)"),
                 ),
-                customdata=[
-                    [str(row.uid), float(pressure_lookup.get(str(row.uid), 0.0))]
-                    for row in data.nodes.itertuples(index=False)
-                ],
+                customdata=node_customdata,
                 hovertemplate="Node %{customdata[0]}<br>Pressure %{customdata[1]:.2f} kPa<extra></extra>",
                 showlegend=False,
             )
         )
         fig.update_layout(
             mapbox_style="open-street-map",
-            mapbox=dict(center=dict(lat=sum(v[1] for v in positions.values()) / len(positions), lon=sum(v[0] for v in positions.values()) / len(positions)), zoom=8),
+            mapbox=dict(center=_map_center(positions), zoom=8),
             margin=dict(l=0, r=0, t=20, b=0),
         )
     else:
-        for row in data.pipes.itertuples(index=False):
-            start = positions.get(str(row.from_node))
-            end = positions.get(str(row.to_node))
-            if start is None or end is None:
-                continue
+        if pipe_x:
             fig.add_trace(
-                go.Scatter(
-                    x=[start[0], end[0]],
-                    y=[start[1], end[1]],
+                go.Scattergl(
+                    x=pipe_x,
+                    y=pipe_y,
                     mode="lines",
-                    line=dict(width=1.0, color="#cbd5e1"),
+                    line=dict(width=1.0, color="#22c55e"),
                     hoverinfo="skip",
                     showlegend=False,
                 )
             )
-        for row in data.valves.itertuples(index=False):
-            start = positions.get(str(row.from_node))
-            end = positions.get(str(row.to_node))
-            if start is None or end is None:
-                continue
+        if valve_x:
             fig.add_trace(
-                go.Scatter(
-                    x=[start[0], end[0]],
-                    y=[start[1], end[1]],
+                go.Scattergl(
+                    x=valve_x,
+                    y=valve_y,
                     mode="lines",
                     line=dict(width=1.2, color="#ef4444"),
                     hoverinfo="skip",
@@ -295,20 +290,17 @@ def _build_pressure_figure(data: GasNetworkData, solution: dict[str, Any]) -> go
             )
 
         fig.add_trace(
-            go.Scatter(
-                x=[positions[str(row.uid)][0] for row in data.nodes.itertuples(index=False)],
-                y=[positions[str(row.uid)][1] for row in data.nodes.itertuples(index=False)],
+            go.Scattergl(
+                x=node_lons,
+                y=node_lats,
                 mode="markers",
                 marker=dict(
                     size=_node_size(len(data.nodes)),
-                    color=[pressure_lookup.get(str(row.uid), 0.0) for row in data.nodes.itertuples(index=False)],
+                    color=node_pressures,
                     colorscale="Viridis",
                     colorbar=dict(title="Pressure (kPa)"),
                 ),
-                customdata=[
-                    [str(row.uid), float(pressure_lookup.get(str(row.uid), 0.0))]
-                    for row in data.nodes.itertuples(index=False)
-                ],
+                customdata=node_customdata,
                 hovertemplate="Node %{customdata[0]}<br>Pressure %{customdata[1]:.2f} kPa<extra></extra>",
                 showlegend=False,
             )
@@ -333,7 +325,9 @@ def build_charts(data: GasNetworkData, solution: dict[str, Any], output_dir: Pat
     network_path = charts_dir / "network.html"
     pressure_path = charts_dir / "pressure_heatmap.html"
 
-    pio.write_html(_build_network_figure(data, solution), file=str(network_path), include_plotlyjs="cdn", auto_open=False)
-    pio.write_html(_build_pressure_figure(data, solution), file=str(pressure_path), include_plotlyjs="cdn", auto_open=False)
+    positions = _node_positions(data)
+
+    pio.write_html(_build_network_figure(data, solution, positions), file=str(network_path), include_plotlyjs="cdn", auto_open=False)
+    pio.write_html(_build_pressure_figure(data, solution, positions), file=str(pressure_path), include_plotlyjs="cdn", auto_open=False)
 
     return {"network": network_path, "pressure_heatmap": pressure_path}
