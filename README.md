@@ -209,6 +209,13 @@ Linear approximation of Weymouth using tangent planes over 5 pressure intervals:
 - **Typical use**: Larger networks, faster solve
 - **Recommended**: ringed_LP_7nodes, ZUG_1300nodes (if it fits in memory)
 
+### `renouard_ogd` (Quadratic, MIQCP)
+To be implemented
+
+### `renouard_lp_ogd` (?)
+To be implemented
+
+
 ---
 
 ## Architecture
